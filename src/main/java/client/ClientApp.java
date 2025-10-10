@@ -15,7 +15,20 @@ public class ClientApp {
     private static PrintWriter commandSender;
 
     public static void main(String[] args) {
-        String serverIp = "127.0.0.1"; // Thay đổi IP này nếu Server ở máy khác
+        // Hiện hộp thoại yêu cầu nhập IP
+        String serverIp = JOptionPane.showInputDialog(
+                null,
+                "Nhập địa chỉ IP của Server:",
+                "Kết nối đến Server",
+                JOptionPane.QUESTION_MESSAGE
+        );
+
+        // Nếu người dùng không nhập gì hoặc nhấn Cancel, thoát chương trình
+        if (serverIp == null || serverIp.trim().isEmpty()) {
+            System.out.println("Không nhập IP, chương trình kết thúc.");
+            return;
+        }
+
         int serverPort = 12345;
 
         try {
@@ -24,20 +37,18 @@ public class ClientApp {
             System.out.println("Đã kết nối tới server.");
 
             // Luồng gửi lệnh (PrintWriter)
-            commandSender = new PrintWriter(socket.getOutputStream(), true); // true = autoFlush
+            commandSender = new PrintWriter(socket.getOutputStream(), true);
 
             // Tạo UI trên Event Dispatch Thread (EDT)
             SwingUtilities.invokeLater(() -> {
-                frame = new JFrame("Remote Desktop Viewer");
-
-                // Khởi tạo ScreenPanel và truyền PrintWriter vào
+                frame = new JFrame("Remote Desktop Viewer - Đang kết nối tới " + serverIp);
                 screenPanel = new ScreenPanel(commandSender);
                 frame.add(screenPanel);
 
                 frame.setSize(1280, 720);
                 frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
                 frame.setVisible(true);
-                screenPanel.requestFocusInWindow();
+                screenPanel.requestFocusInWindow(); // Yêu cầu focus sau khi cửa sổ hiển thị
             });
 
             // Luồng nhận hình ảnh (chạy trên luồng riêng)
@@ -58,7 +69,7 @@ public class ClientApp {
         } catch (Exception e) {
             System.out.println("Lỗi client hoặc mất kết nối server.");
             e.printStackTrace();
-            JOptionPane.showMessageDialog(null, "Không thể kết nối đến server.", "Lỗi Kết Nối", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(null, "Không thể kết nối đến server tại IP: " + serverIp, "Lỗi Kết Nối", JOptionPane.ERROR_MESSAGE);
         }
     }
 }
