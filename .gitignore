@@ -38,6 +38,7 @@ bin/
 
 ### VS Code ###
 .vscode/
-
+# Ẩn file chứa API key
+server_config.properties
 ### Mac OS ###
 .DS_Store

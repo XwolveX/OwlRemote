@@ -1,5 +1,6 @@
 package client;
 
+import common.ZeroTierManager;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.image.BufferedImage;
@@ -7,6 +8,7 @@ import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.Properties; // Thêm import
 
 public class ClientApp {
 
@@ -14,18 +16,64 @@ public class ClientApp {
     private static ScreenPanel screenPanel;
     private static PrintWriter commandSender;
 
-    public static void main(String[] args) {
-        // Hiện hộp thoại yêu cầu nhập IP
+    public static void start() {
+        // --- 1. ĐỌC CẤU HÌNH ZEROTIER ---
+        Properties config = ZeroTierManager.readConfig("config.properties");
+        String networkId = config.getProperty("NETWORK_ID");
+        if (networkId == null) {
+            JOptionPane.showMessageDialog(null, "Không tìm thấy NETWORK_ID trong file config.properties.", "Lỗi Cấu hình", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        ZeroTierManager ztManager = new ZeroTierManager();
+
+        // --- 2. TỰ ĐỘNG JOIN VÀ CHỜ CẤP PHÉP ---
+        System.out.println("Đang tham gia mạng: " + networkId);
+        ztManager.joinNetwork(networkId);
+
+        // Hiển thị cửa sổ chờ
+        JDialog waitingDialog = new JDialog();
+        waitingDialog.setTitle("Đang chờ...");
+        waitingDialog.add(new JLabel("Đã yêu cầu tham gia mạng. Vui lòng đợi Host cấp phép..."));
+        waitingDialog.setSize(400, 100);
+        waitingDialog.setLocationRelativeTo(null);
+        waitingDialog.setModal(false); // Để nó không khóa luồng
+        waitingDialog.setVisible(true);
+
+        String clientIp = ztManager.getManagedIp(networkId);
+        while (clientIp == null) {
+            try {
+                Thread.sleep(5000); // Chờ 5 giây
+                clientIp = ztManager.getManagedIp(networkId);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        // Được cấp phép! Đóng cửa sổ chờ.
+        waitingDialog.dispose();
+        System.out.println("Đã được cấp phép! IP của bạn là: " + clientIp);
+
+        // --- 3. BẮT ĐẦU KẾT NỐI (Code cũ của bạn) ---
         String serverIp = JOptionPane.showInputDialog(
                 null,
-                "Nhập địa chỉ IP của Server:",
+                "Đã vào mạng! Nhập IP của Host (Server):",
                 "Kết nối đến Server",
                 JOptionPane.QUESTION_MESSAGE
         );
-
-        // Nếu người dùng không nhập gì hoặc nhấn Cancel, thoát chương trình
         if (serverIp == null || serverIp.trim().isEmpty()) {
             System.out.println("Không nhập IP, chương trình kết thúc.");
+            return;
+        }
+
+        String password = JOptionPane.showInputDialog(
+                null,
+                "Nhập Mật khẩu kết nối:",
+                "Xác thực",
+                JOptionPane.QUESTION_MESSAGE
+        );
+        if (password == null || password.trim().isEmpty()) {
+            System.out.println("Không nhập mật khẩu, chương trình kết thúc.");
             return;
         }
 
@@ -38,6 +86,7 @@ public class ClientApp {
 
             // Luồng gửi lệnh (PrintWriter)
             commandSender = new PrintWriter(socket.getOutputStream(), true);
+            commandSender.println(password); // Gửi mật khẩu
 
             // Tạo UI trên Event Dispatch Thread (EDT)
             SwingUtilities.invokeLater(() -> {
@@ -51,7 +100,7 @@ public class ClientApp {
                 screenPanel.requestFocusInWindow(); // Yêu cầu focus sau khi cửa sổ hiển thị
             });
 
-            // Luồng nhận hình ảnh (chạy trên luồng riêng)
+            // Luồng nhận hình ảnh
             DataInputStream dis = new DataInputStream(socket.getInputStream());
             while (socket.isConnected()) {
                 int size = dis.readInt();

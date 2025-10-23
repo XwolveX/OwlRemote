@@ -1,5 +1,12 @@
 package server;
 
+import common.ZeroTierManager;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.Properties;
+import java.util.HashSet;
+import java.util.Set;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
@@ -18,23 +25,109 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Iterator;
+import java.util.Random;
 
 public class ServerApp {
-    public static void main(String[] args) {
+    public static void start() {
+        // --- 1. ĐỌC CẤU HÌNH ZEROTIER ---
+        Properties config = ZeroTierManager.readConfig("config.properties");
+        Properties serverConfig = ZeroTierManager.readConfig("server_config.properties");
+        String networkId = config.getProperty("NETWORK_ID");
+        String apiKey = serverConfig.getProperty("CENTRAL_API_KEY");
+
+        if (networkId == null || apiKey == null) {
+            JOptionPane.showMessageDialog(null, "Không tìm thấy NETWORK_ID hoặc CENTRAL_API_KEY trong file config.", "Lỗi Cấu hình", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        ZeroTierManager ztManager = new ZeroTierManager();
+
+        // --- 2. TỰ ĐỘNG JOIN VÀ LẤY IP HOST ---
+        ztManager.joinNetwork(networkId);
+        String hostIp = ztManager.getManagedIp(networkId);
+        while (hostIp == null) {
+            int result = JOptionPane.showConfirmDialog(null, "Không thể lấy IP Host. Đã cấp phép cho Server trên my.zerotier.com chưa?\nThử lại?", "Lỗi ZeroTier", JOptionPane.YES_NO_OPTION);
+            if (result == JOptionPane.NO_OPTION) System.exit(0);
+            hostIp = ztManager.getManagedIp(networkId);
+        }
+
+        // --- 3. BẮT ĐẦU LUỒNG KIỂM TRA CẤP PHÉP (CHO CLIENT) ---
+        // Dùng một Set để theo dõi các client đã hỏi
+        Set<String> pendingClients = new HashSet<>();
+        String finalHostIp = hostIp;
+        new Thread(() -> {
+            try {
+                while (true) {
+                    JSONArray members = ztManager.listMembers(networkId, apiKey);
+                    if (members == null) {
+                        Thread.sleep(10000); // 10 giây
+                        continue;
+                    }
+                    for (int i = 0; i < members.length(); i++) {
+                        JSONObject member = members.getJSONObject(i);
+                        boolean isAuthorized = member.getJSONObject("config").getBoolean("authorized");
+                        String memberId = member.getString("nodeId");
+
+                        // Nếu chưa cấp phép VÀ chưa từng hỏi
+                        if (!isAuthorized && !pendingClients.contains(memberId)) {
+                            pendingClients.add(memberId); // Đánh dấu là đã hỏi
+                            String clientName = member.optString("name", "Không rõ");
+
+                            // Hiển thị popup trên luồng UI
+                            SwingUtilities.invokeLater(() -> {
+                                int result = JOptionPane.showConfirmDialog(null,
+                                        "Phát hiện Client [" + clientName + "] (" + memberId + ") muốn tham gia.\n" +
+                                                "Bạn có đồng ý cấp phép không?",
+                                        "Yêu cầu Cấp phép",
+                                        JOptionPane.YES_NO_OPTION);
+
+                                if (result == JOptionPane.OK_OPTION) {
+                                    System.out.println("Đang cấp phép cho: " + memberId);
+                                    ztManager.authorizeMember(networkId, apiKey, memberId);
+                                }
+                            });
+                        }
+                    }
+                    Thread.sleep(10000); // Kiểm tra lại sau 10 giây
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }).start();
         try {
-            // Hiển thị IP của Server để Client biết đường kết nối
-            String ipAddress = InetAddress.getLocalHost().getHostAddress();
-            String message = String.format("Server đang chạy tại IP: %s\nChờ client kết nối tại cổng: 12345", ipAddress);
+            String serverPassword = String.format("%06d", new Random().nextInt(999999));
+
+            String message = String.format("SERVER SẴN SÀNG (ZEROTIER)\n\n" +
+                            "Gửi thông tin này cho bạn bè:\n" +
+                            "IP Server: %s\n" +
+                            "MẬT KHẨU: %s\n" +
+                            "Cổng: 12345",
+                    finalHostIp, serverPassword);
             JOptionPane.showMessageDialog(null, message, "Server Information", JOptionPane.INFORMATION_MESSAGE);
 
             // Mở cổng và chờ kết nối
             ServerSocket serverSocket = new ServerSocket(12345);
+            System.out.println("Đang chờ client kết nối...");
             Socket clientSocket = serverSocket.accept();
-            System.out.println("Client đã kết nối!");
+            System.out.println("Client đã kết nối! Đang chờ xác thực...");
+
+            // Dùng BufferedReader để đọc lệnh (và mật khẩu)
+            BufferedReader commandReader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+
+            // Đọc dòng đầu tiên client gửi và kiểm tra mật khẩu
+            String clientPassword = commandReader.readLine();
+            if(clientPassword == null || !clientPassword.equals(serverPassword)) {
+                System.out.println("Xác thực thất bại! Mật khẩu sai. Đóng kết nối.");
+                clientSocket.close();
+                return;
+            }
+            System.out.println("Xác thực thành công!");
+            // --- KẾT THÚC XÁC THỰC ---
+
 
             Robot robot = new Robot();
 
-            // --- Luồng 1: Gửi màn hình liên tục (Đã tối ưu) ---
+            // --- Luồng 1: Gửi màn hình liên tục  ---
             new Thread(() -> {
                 try {
                     DataOutputStream dos = new DataOutputStream(clientSocket.getOutputStream());
@@ -46,7 +139,7 @@ public class ServerApp {
                     ImageWriteParam param = writer.getDefaultWriteParam();
                     if (param.canWriteCompressed()) {
                         param.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
-                        param.setCompressionQuality(0.7f); // 70% chất lượng, giảm băng thông
+                        param.setCompressionQuality(0.8f); // 80% chất lượng, giảm băng thông
                     }
 
                     while (clientSocket.isConnected()) {
@@ -72,7 +165,6 @@ public class ServerApp {
             }).start();
 
             // --- Luồng 2 (Luồng chính): Nhận và xử lý lệnh điều khiển ---
-            BufferedReader commandReader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
             String command;
             while ((command = commandReader.readLine()) != null) {
                 String[] parts = command.split(",");
