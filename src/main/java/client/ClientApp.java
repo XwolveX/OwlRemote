@@ -8,7 +8,7 @@ import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.PrintWriter;
 import java.net.Socket;
-import java.util.Properties; // Thêm import
+import java.util.Properties;
 
 public class ClientApp {
 
@@ -16,17 +16,8 @@ public class ClientApp {
     private static ScreenPanel screenPanel;
     private static PrintWriter commandSender;
 
-    public static void start() {
-        // --- 1. ĐỌC CẤU HÌNH ZEROTIER ---
-        Properties config = ZeroTierManager.readConfig("config.properties");
-        String networkId = config.getProperty("NETWORK_ID");
-        if (networkId == null) {
-            JOptionPane.showMessageDialog(null, "Không tìm thấy NETWORK_ID trong file config.properties.", "Lỗi Cấu hình", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-
+    public static void start(String networkId) {
         ZeroTierManager ztManager = new ZeroTierManager();
-
         // --- 2. TỰ ĐỘNG JOIN VÀ CHỜ CẤP PHÉP ---
         System.out.println("Đang tham gia mạng: " + networkId);
         ztManager.joinNetwork(networkId);
@@ -37,24 +28,23 @@ public class ClientApp {
         waitingDialog.add(new JLabel("Đã yêu cầu tham gia mạng. Vui lòng đợi Host cấp phép..."));
         waitingDialog.setSize(400, 100);
         waitingDialog.setLocationRelativeTo(null);
-        waitingDialog.setModal(false); // Để nó không khóa luồng
+        waitingDialog.setModal(false);
         waitingDialog.setVisible(true);
 
         String clientIp = ztManager.getManagedIp(networkId);
         while (clientIp == null) {
             try {
-                Thread.sleep(5000); // Chờ 5 giây
+                Thread.sleep(5000);
                 clientIp = ztManager.getManagedIp(networkId);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
-
         // Được cấp phép! Đóng cửa sổ chờ.
         waitingDialog.dispose();
         System.out.println("Đã được cấp phép! IP của bạn là: " + clientIp);
 
-        // --- 3. BẮT ĐẦU KẾT NỐI (Code cũ của bạn) ---
+        // --- 3. BẮT ĐẦU KẾT NỐI ---
         String serverIp = JOptionPane.showInputDialog(
                 null,
                 "Đã vào mạng! Nhập IP của Host (Server):",

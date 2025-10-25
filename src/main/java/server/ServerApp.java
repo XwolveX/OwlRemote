@@ -28,18 +28,7 @@ import java.util.Iterator;
 import java.util.Random;
 
 public class ServerApp {
-    public static void start() {
-        // --- 1. ĐỌC CẤU HÌNH ZEROTIER ---
-        Properties config = ZeroTierManager.readConfig("config.properties");
-        Properties serverConfig = ZeroTierManager.readConfig("server_config.properties");
-        String networkId = config.getProperty("NETWORK_ID");
-        String apiKey = serverConfig.getProperty("CENTRAL_API_KEY");
-
-        if (networkId == null || apiKey == null) {
-            JOptionPane.showMessageDialog(null, "Không tìm thấy NETWORK_ID hoặc CENTRAL_API_KEY trong file config.", "Lỗi Cấu hình", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-
+    public static void start(String networkId,String apiKey) {
         ZeroTierManager ztManager = new ZeroTierManager();
 
         // --- 2. TỰ ĐỘNG JOIN VÀ LẤY IP HOST ---

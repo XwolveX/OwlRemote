@@ -1,3 +1,6 @@
+import org.gradle.api.tasks.bundling.Jar
+import org.gradle.api.file.DuplicatesStrategy
+
 plugins {
     id("java")
     id("application")
@@ -21,13 +24,29 @@ dependencies {
 application {
     mainClass.set("MainLauncher")
 }
-tasks.jar {
+tasks.withType<Jar>().configureEach {
     manifest {
-        attributes["Main-Class"] = "MainLauncher"
+        attributes["Main-Class"] = "MainLauncher" // Ensure this matches mainClass
     }
-    from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
+
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE // Add this line
+
+    from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) }) {
+        exclude("META-INF/*.RSA", "META-INF/*.SF", "META-INF/*.DSA")
+        exclude("META-INF/LICENSE", "META-INF/LICENSE.txt", "META-INF/license/**")
+        exclude("META-INF/NOTICE", "META-INF/NOTICE.txt", "META-INF/notice/**")
+        exclude("META-INF/DEPENDENCIES")
+        exclude("META-INF/INDEX.LIST")
+        exclude("module-info.class")
+    }
 }
+
 
 tasks.test {
     useJUnitPlatform()
+}
+
+// Optional: Ensure UTF-8 encoding
+tasks.withType<JavaCompile> {
+    options.encoding = "UTF-8"
 }

@@ -98,7 +98,6 @@ public class ZeroTierManager {
                 }
             }
         } catch (Exception e) {
-            // ...
         }
         return null; // Chưa được cấp IP
     }
