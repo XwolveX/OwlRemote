@@ -40,7 +40,7 @@ public class ServerApp {
 
         String finalHostIp = hostIp;
 
-        // --- Giám sát client chờ xác thực ---
+        // --- Monitor clients waiting for authentication ---
         new Thread(() -> {
             try {
                 Set<String> pendingClients = new HashSet<>();
@@ -104,14 +104,14 @@ public class ServerApp {
             DataOutputStream videoOut = new DataOutputStream(
                     new BufferedOutputStream(videoSocket.getOutputStream()));
 
-            // Thiết lập bộ nén JPEG
+            // Set up JPEG compression
             Iterator<ImageWriter> writers = ImageIO.getImageWritersByFormatName("jpg");
             ImageWriter jpgWriter = writers.next();
             ImageWriteParam param = jpgWriter.getDefaultWriteParam();
             param.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
-            param.setCompressionQuality(0.8f); // 0.0–1.0 (chất lượng hình ảnh)
+            param.setCompressionQuality(0.8f); // 0.0–1.0 (image quality)
 
-            // --- Thread gửi frame ---
+            // --- Thread sends frame ---
             new Thread(() -> {
                 try {
                     while (true) {
@@ -131,7 +131,7 @@ public class ServerApp {
                 }
             }).start();
 
-            // --- Nhận lệnh điều khiển ---
+            // --- Receive control commands ---
             String cmd;
             while ((cmd = reader.readLine()) != null) {
                 try {

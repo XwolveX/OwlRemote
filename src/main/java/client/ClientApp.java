@@ -42,7 +42,7 @@ public class ClientApp {
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.setVisible(true);
 
-            // --- Thread nhận frame ---
+            // --- Thread receives frame ---
             new Thread(() -> {
                 try {
                     while (true) {

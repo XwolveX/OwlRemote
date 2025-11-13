@@ -28,7 +28,7 @@ public class MainLauncher {
         launcherFrame.setUndecorated(true);
         launcherFrame.setShape(new RoundRectangle2D.Double(0, 0, 550, 680, 35, 35));
 
-        // Panel chính với gradient background
+        // Main panel with gradient background
         GradientPanel mainPanel = new GradientPanel();
         mainPanel.setLayout(new BorderLayout(0, 0));
         mainPanel.setBorder(new EmptyBorder(45, 45, 45, 45));
@@ -56,13 +56,13 @@ public class MainLauncher {
         headerPanel.setLayout(new BoxLayout(headerPanel, BoxLayout.Y_AXIS));
         headerPanel.setOpaque(false);
 
-        // Logo container với animation effect
+        // Container logo with animation effect
         JPanel logoContainer = new JPanel();
         logoContainer.setLayout(new BoxLayout(logoContainer, BoxLayout.Y_AXIS));
         logoContainer.setOpaque(false);
         logoContainer.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        // Logo với background circle
+        // Logo with circle background
         CircleLogoPanel logoPanel = new CircleLogoPanel();
         logoPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
         logoContainer.add(logoPanel);
@@ -70,7 +70,7 @@ public class MainLauncher {
         headerPanel.add(logoContainer);
         headerPanel.add(Box.createVerticalStrut(25));
 
-        // Tiêu đề chính với shadow effect
+        // Main title with shadow effect
         JLabel titleLabel = new JLabel("OwlRemote") {
             @Override
             protected void paintComponent(Graphics g) {
@@ -98,7 +98,7 @@ public class MainLauncher {
 
         headerPanel.add(Box.createVerticalStrut(12));
 
-        // Subtitle với gradient text effect
+        // Subtitle with gradient text effect
         JLabel subtitleLabel = new JLabel("Remote Desktop Control");
         subtitleLabel.setFont(new Font("Segoe UI", Font.PLAIN, 17));
         subtitleLabel.setForeground(new Color(160, 180, 210));
@@ -107,13 +107,13 @@ public class MainLauncher {
 
         mainPanel.add(headerPanel, BorderLayout.NORTH);
 
-        // Panel chứa các nút
+        // Panel contains buttons
         JPanel centerPanel = new JPanel();
         centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.Y_AXIS));
         centerPanel.setOpaque(false);
         centerPanel.setBorder(new EmptyBorder(45, 0, 0, 0));
 
-        // Nút Host với icon đẹp hơn
+        // Host button with a more beautiful icon
         ModernButton hostButton = new ModernButton(
                 "🖥️  Share This Screen",
                 "Allow others to view and control your desktop",
@@ -125,7 +125,7 @@ public class MainLauncher {
 
         centerPanel.add(Box.createVerticalStrut(22));
 
-        // Nút Client
+        // Client node
         ModernButton clientButton = new ModernButton(
                 "🎮  Control Remote Screen",
                 "Connect and control another computer remotely",
@@ -137,7 +137,7 @@ public class MainLauncher {
 
         mainPanel.add(centerPanel, BorderLayout.CENTER);
 
-        // Footer với thông tin và nút thoát
+        // Footer with information and exit button
         JPanel footerPanel = new JPanel(new BorderLayout());
         footerPanel.setOpaque(false);
         footerPanel.setBorder(new EmptyBorder(15, 0, 0, 0));
@@ -148,7 +148,8 @@ public class MainLauncher {
         versionLabel.setForeground(new Color(100, 120, 150));
         versionLabel.setHorizontalAlignment(SwingConstants.LEFT);
 
-        // Exit button với hiệu ứng đẹp hơn
+
+        // Exit button with better effect
         JButton exitButton = new JButton("✕") {
             @Override
             protected void paintComponent(Graphics g) {
@@ -176,7 +177,7 @@ public class MainLauncher {
         exitButton.setContentAreaFilled(false);
         exitButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
         exitButton.addActionListener(e -> {
-            // Fade out animation trước khi thoát
+            // Fade out animation before exiting
             Timer timer = new Timer(15, null);
             final float[] opacity = {1.0f};
             timer.addActionListener(evt -> {
@@ -252,7 +253,7 @@ public class MainLauncher {
         launcherFrame.setVisible(true);
     }
 
-    // Circle logo panel với gradient background
+    // Circle logo panel with gradient background
     static class CircleLogoPanel extends JPanel {
         public CircleLogoPanel() {
             setPreferredSize(new Dimension(120, 120));
@@ -294,7 +295,7 @@ public class MainLauncher {
         }
     }
 
-    // Panel với gradient background
+    // Panel with gradient background
     static class GradientPanel extends JPanel {
         @Override
         protected void paintComponent(Graphics g) {
@@ -311,7 +312,7 @@ public class MainLauncher {
         }
     }
 
-    // Modern button với nhiều hiệu ứng hơn
+    // Modern button with more effects
     static class ModernButton extends JPanel {
         private final JLabel mainLabel;
         private final JLabel subLabel;
@@ -407,7 +408,7 @@ public class MainLauncher {
             g2d.setColor(new Color(0, 0, 0, isHovered ? 100 : 60));
             g2d.fillRoundRect(3, 3, getWidth() - 6, getHeight() - 6, 22, 22);
 
-            // Button background với gradient
+            // Button background with gradient
             GradientPaint gradient = new GradientPaint(
                     0, 0, currentColor,
                     0, getHeight(), currentColor.darker()

@@ -27,7 +27,7 @@ public class ZeroTierManager {
     }
 
     /**
-     * Đọc file config.properties
+     * Read the config.properties file
      */
     public static Properties readConfig(String filePath) {
         Properties props = new Properties();
@@ -40,7 +40,7 @@ public class ZeroTierManager {
     }
 
     /**
-     * Tìm auth token trên máy local
+     * Find the auth token on the local machine
      */
     private String findAuthToken() throws Exception {
         String tokenPathStr = "";
@@ -58,7 +58,7 @@ public class ZeroTierManager {
     }
 
     /**
-     * Gửi yêu cầu tham gia mạng (Local API)
+     * Send a request to join the network (Local API)
      */
     public boolean joinNetwork(String networkId) {
         if (authToken == null) return false;
@@ -77,7 +77,7 @@ public class ZeroTierManager {
     }
 
     /**
-     * Lấy IP ảo hiện tại của máy (Local API)
+     * Get the machine's current virtual IP (Local API)
      */
     public String getManagedIp(String networkId) {
         if (authToken == null) return null;
@@ -94,18 +94,18 @@ public class ZeroTierManager {
             if (json.has("assignedAddresses")) {
                 JSONArray addresses = json.getJSONArray("assignedAddresses");
                 if (addresses.length() > 0) {
-                    return addresses.getString(0).split("/")[0]; // Lấy IP, bỏ /mask
+                    return addresses.getString(0).split("/")[0]; // Get IP, remove /mask
                 }
             }
         } catch (Exception e) {
         }
-        return null; // Chưa được cấp IP
+        return null; // IP has not been granted
     }
 
-    // --- CÁC HÀM API TRUNG TÂM---
+    // --- CENTRAL API FUNCTIONS---
 
     /**
-     * Lấy danh sách thành viên trong mạng (Central API)
+     * Get list of network members (Central API)
      */
     public JSONArray listMembers(String networkId, String apiKey) {
         try {
@@ -125,11 +125,10 @@ public class ZeroTierManager {
     }
 
     /**
-     * Cấp phép cho một thành viên (Central API)
+     * Single Member Licensing (Central API)
      */
     public boolean authorizeMember(String networkId, String apiKey, String memberId) {
         try {
-            // Body của request chỉ cần "authorized: true"
             String jsonBody = new JSONObject().put("config", new JSONObject().put("authorized", true)).toString();
 
             HttpRequest request = HttpRequest.newBuilder()
