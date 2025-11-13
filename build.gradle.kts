@@ -20,16 +20,19 @@ dependencies {
     implementation("org.json:json:20231013")
     implementation("com.formdev:flatlaf:3.2.5")
     implementation("com.formdev:flatlaf-extras:3.2.5")
+    implementation("org.bytedeco:javacv-platform:1.5.10")
+    implementation("org.bytedeco:javacv:1.5.10")
+    implementation("org.bytedeco:ffmpeg-platform:6.1-1.5.10")
 }
 application {
     mainClass.set("MainLauncher")
 }
 tasks.withType<Jar>().configureEach {
     manifest {
-        attributes["Main-Class"] = "MainLauncher" // Ensure this matches mainClass
+        attributes["Main-Class"] = "MainLauncher"
     }
 
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE // Add this line
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 
     from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) }) {
         exclude("META-INF/*.RSA", "META-INF/*.SF", "META-INF/*.DSA")

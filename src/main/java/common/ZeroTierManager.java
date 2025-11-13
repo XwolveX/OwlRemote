@@ -102,7 +102,7 @@ public class ZeroTierManager {
         return null; // Chưa được cấp IP
     }
 
-    // --- CÁC HÀM API TRUNG TÂM (CHỈ DÙNG CHO SERVER) ---
+    // --- CÁC HÀM API TRUNG TÂM---
 
     /**
      * Lấy danh sách thành viên trong mạng (Central API)
